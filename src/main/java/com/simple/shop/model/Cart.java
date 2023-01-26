@@ -11,12 +11,13 @@ import java.util.Set;
 @Table(name = "cart")
 @Getter
 @Setter
+public
 class Cart {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id")
     private Set<Product> products = new HashSet<>();
 

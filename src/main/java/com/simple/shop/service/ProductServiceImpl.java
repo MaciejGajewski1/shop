@@ -1,6 +1,6 @@
 package com.simple.shop.service;
 
-import com.simple.shop.exceptions.ProductNotFoundException;
+
 import com.simple.shop.model.Product;
 import com.simple.shop.model.ProductDto;
 import com.simple.shop.model.ProductResponse;
@@ -37,26 +37,17 @@ class ProductServiceImpl implements ProductService {
 
     @Override
     public void deleteProduct(Long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
-        if (optionalProduct.isEmpty()) {
-            throw new ProductNotFoundException(id);
-        } else {
-            productRepository.delete(optionalProduct.get());
-        }
+        Product product = productRepository.findById(id).orElseThrow();
+        productRepository.delete(product);
     }
 
     @Override
     public Product updateProduct(Long id, ProductDto productDto) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
-        if (optionalProduct.isEmpty()) {
-            throw new ProductNotFoundException(id);
-        } else {
-            Product product = optionalProduct.get();
-            product.setTitle(productDto.getTitle());
-            product.setPrice(new BigDecimal(productDto.getPrice()));
-            productRepository.save(product);
-            return product;
-        }
+        Product product = productRepository.findById(id).orElseThrow();
+        product.setTitle(productDto.getTitle());
+        product.setPrice(new BigDecimal(productDto.getPrice()));
+        productRepository.save(product);
+        return product;
     }
 
     @Override

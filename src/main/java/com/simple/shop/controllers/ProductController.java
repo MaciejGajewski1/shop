@@ -1,7 +1,6 @@
 package com.simple.shop.controllers;
 
 
-import com.simple.shop.exceptions.ProductNotFoundException;
 import com.simple.shop.model.Product;
 import com.simple.shop.model.ProductDto;
 import com.simple.shop.model.ProductResponse;
@@ -13,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.NoSuchElementException;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -41,15 +42,21 @@ class ProductController {
                 .created(uriComponents.toUri())
                 .body(EntityModel.of(
                         product,
-                        linkTo(methodOn(ProductController.class).createProduct(productDto)).withSelfRel()
+                        linkTo(methodOn(ProductController.class).createProduct(productDto)).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getAllProducts(
+                                Integer.valueOf(DEFAULT_PAGE_NUMBER),
+                                Integer.valueOf(DEFAULT_PAGE_SIZE),
+                                DEFAULT_SORT_BY,
+                                DEFAULT_SORT_DIRECTION
+                        )).withRel("products")
                 ));
     }
 
     @DeleteMapping("/products/{id}")
-    public ResponseEntity<Object> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
-        } catch (ProductNotFoundException e) {
+        } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .build();
@@ -58,11 +65,11 @@ class ProductController {
     }
 
     @PutMapping("/products/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
+    public ResponseEntity updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
         try {
             productService.updateProduct(id, productDto);
             return ResponseEntity.noContent().build();
-        } catch (ProductNotFoundException e) {
+        } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .build();
@@ -70,18 +77,35 @@ class ProductController {
     }
 
     @GetMapping("/products")
-    public ProductResponse getAllProducts (
+    public EntityModel<ProductResponse> getAllProducts (
             @RequestParam(value = "pageNo", defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(value = "pageSize", defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(value = "sortBy", defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
             @RequestParam(value = "pageDir", defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir
     ) {
-        return productService.getAllProducts(pageNo, pageSize, sortBy, sortDir);
+        ProductResponse productResponse = productService.getAllProducts(pageNo, pageSize, sortBy, sortDir);
+        if (pageNo == 0) {
+            return EntityModel.of(
+                    productResponse,
+                    linkTo(methodOn(ProductController.class).getAllProducts(pageNo + 1, pageSize, sortBy, sortDir)).withRel("next_page")
+            );
+        } else if (productResponse.getTotalPages() - 1 == pageNo) {
+            return EntityModel.of(
+                    productResponse,
+                    linkTo(methodOn(ProductController.class).getAllProducts(pageNo - 1, pageSize, sortBy, sortDir)).withRel("previous_page")
+            );
+        } else {
+            return EntityModel.of(
+                    productResponse,
+                    linkTo(methodOn(ProductController.class).getAllProducts(pageNo + 1, pageSize, sortBy, sortDir)).withRel("next_page"),
+                    linkTo(methodOn(ProductController.class).getAllProducts(pageNo - 1, pageSize, sortBy, sortDir)).withRel("previous_page")
+            );
+        }
     }
-
 
     @GetMapping("/products/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable Long id) {
         return ResponseEntity.of(productService.getProduct(id));
     }
+
 }
