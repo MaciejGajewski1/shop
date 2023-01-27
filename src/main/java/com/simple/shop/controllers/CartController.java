@@ -39,26 +39,30 @@ class CartController {
     }
 
     @PatchMapping("carts/{cartId}/products/add/{productId}")
-    public ResponseEntity addProduct(@PathVariable Long cartId, @PathVariable Long productId) {
+    public ResponseEntity<Object> addProduct(@PathVariable Long cartId, @PathVariable Long productId) {
         try {
             cartService.addProduct(cartId, productId);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .build();
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .build();
         } catch (FullCartException e) {
             return ResponseEntity
-                    .status(HttpStatus.PRECONDITION_FAILED)
+                    .status(HttpStatus.BAD_REQUEST)
                     .build();
         }
     }
 
     @PatchMapping("carts/{cartId}/products/delete/{productId}")
-    public ResponseEntity deleteProduct(@PathVariable Long cartId, @PathVariable Long productId) {
+    public ResponseEntity<Object> deleteProduct(@PathVariable Long cartId, @PathVariable Long productId) {
         try {
             cartService.deleteProduct(cartId, productId);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .build();
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)

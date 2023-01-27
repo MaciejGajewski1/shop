@@ -15,16 +15,14 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.NoSuchElementException;
 
+import static com.simple.shop.config.PaginationConfig.*;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 class ProductController {
 
-    public static final String DEFAULT_PAGE_NUMBER = "0";
-    public  static final String DEFAULT_PAGE_SIZE = "3";
-    public static final String DEFAULT_SORT_BY = "id";
-    public static final String DEFAULT_SORT_DIRECTION = "asc";
+
     private ProductService productService;
 
     @Autowired
@@ -43,17 +41,18 @@ class ProductController {
                 .body(EntityModel.of(
                         product,
                         linkTo(methodOn(ProductController.class).createProduct(productDto)).withSelfRel(),
+                        linkTo(methodOn(ProductController.class).getProduct(product.getId())).withRel("getProduct"),
                         linkTo(methodOn(ProductController.class).getAllProducts(
-                                Integer.valueOf(DEFAULT_PAGE_NUMBER),
-                                Integer.valueOf(DEFAULT_PAGE_SIZE),
+                                Integer.parseInt(DEFAULT_PAGE_NUMBER),
+                                Integer.parseInt(DEFAULT_PAGE_SIZE),
                                 DEFAULT_SORT_BY,
                                 DEFAULT_SORT_DIRECTION
-                        )).withRel("products")
+                        )).withRel("getAllProducts")
                 ));
     }
 
     @DeleteMapping("/products/{id}")
-    public ResponseEntity deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
         } catch (NoSuchElementException e) {
@@ -61,14 +60,18 @@ class ProductController {
                     .status(HttpStatus.NOT_FOUND)
                     .build();
         }
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .build();
     }
 
     @PutMapping("/products/{id}")
-    public ResponseEntity updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
+    public ResponseEntity<Object> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
         try {
             productService.updateProduct(id, productDto);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .build();
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
