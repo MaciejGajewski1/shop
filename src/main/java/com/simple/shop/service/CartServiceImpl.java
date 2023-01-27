@@ -32,7 +32,7 @@ class CartServiceImpl implements CartService {
     @Override
     public Cart addProduct(Long cartId, Long productId) {
         Cart cart = cartRepository.findById(cartId).orElseThrow();
-        if (cart.getProducts().size() == 3) {
+        if (cart.getProducts().size() >= 3) {
             throw new FullCartException();
         }
         Product product = productService.getProduct(productId).orElseThrow();
